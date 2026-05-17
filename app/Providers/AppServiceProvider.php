@@ -2,23 +2,30 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Observers\UserObserver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        User::observe(UserObserver::class);
+
+        $this->configureRateLimiting();
+    }
+
+    private function configureRateLimiting(): void
+    {
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+
+        RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
+        RateLimiter::for('magic-link', fn (Request $request) => Limit::perMinute(2)->by($request->ip()));
     }
 }

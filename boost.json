@@ -1,0 +1,22 @@
+{
+    "agents": [
+        "junie",
+        "cursor",
+        "opencode",
+        "gemini"
+    ],
+    "cloud": false,
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch": false,
+    "sail": false,
+    "skills": [
+        "laravel-best-practices",
+        "mcp-development",
+        "socialite-development",
+        "livewire-development",
+        "pest-testing",
+        "tailwindcss-development",
+        "laravel-specialist"
+    ]
+}
