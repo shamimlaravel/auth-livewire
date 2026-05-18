@@ -8,16 +8,20 @@ use App\DTOs\Auth\RegisterDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\Auth\ApiLoginRequest;
 use App\Http\Requests\API\Auth\ApiRegisterRequest;
+use App\Http\Requests\API\Auth\SendOtpRequest;
+use App\Http\Requests\API\Auth\VerifyOtpLoginRequest;
 use App\Http\Requests\API\Auth\VerifyOtpRequest;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Services\API\ApiTokenService;
 use App\Services\Auth\AuthenticationService;
+use App\Services\Auth\OtpService;
 use App\Services\Auth\PasswordResetService;
 use App\Services\Auth\TwoFactorService;
 use App\Services\Security\DeviceFingerprintService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -25,6 +29,7 @@ class AuthController extends Controller
     public function __construct(
         private readonly ApiTokenService $apiTokenService,
         private readonly AuthenticationService $authenticationService,
+        private readonly OtpService $otpService,
         private readonly PasswordResetService $passwordResetService,
         private readonly TwoFactorService $twoFactorService,
         private readonly DeviceFingerprintService $deviceFingerprintService,
@@ -35,11 +40,6 @@ class AuthController extends Controller
         try {
             $dto = LoginDTO::fromApiRequest($request);
             $user = $this->authenticationService->login($dto);
-
-            $user->update([
-                'last_login_ip' => $request->ip(),
-                'last_login_at' => now(),
-            ]);
 
             $result = $this->apiTokenService->issueTokenResponse($user);
 
@@ -142,6 +142,17 @@ class AuthController extends Controller
             return ApiResponseDTO::success(message: __('auth.email_already_verified'));
         }
 
+        $id = $request->route('id');
+        $hash = $request->route('hash');
+
+        if (! hash_equals((string) $id, (string) $user->getKey())) {
+            return ApiResponseDTO::error(message: __('auth.invalid_verification_link'), code: 403);
+        }
+
+        if (! hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+            return ApiResponseDTO::error(message: __('auth.invalid_verification_link'), code: 403);
+        }
+
         $user->markEmailAsVerified();
 
         return ApiResponseDTO::success(message: __('auth.email_verified'));
@@ -177,26 +188,11 @@ class AuthController extends Controller
     public function enableTwoFactor(Request $request): JsonResponse
     {
         $user = $request->user();
-        $secret = $this->twoFactorService->generateSecretKey();
-
-        $user->update(['two_factor_secret' => $secret]);
-
-        $qrCodeUrl = $this->twoFactorService->getQrCodeUrl(
-            config('app.name'),
-            $user->email,
-            $secret,
-        );
-
-        $recoveryCodes = $this->twoFactorService->generateRecoveryCodes();
-        $user->update(['two_factor_recovery_codes' => json_encode($recoveryCodes)]);
+        $setup = $this->twoFactorService->setup($user);
 
         return ApiResponseDTO::success(
             message: __('auth.two_factor_setup'),
-            data: [
-                'secret' => $secret,
-                'qr_code_url' => $qrCodeUrl,
-                'recovery_codes' => $recoveryCodes,
-            ],
+            data: $setup,
         );
     }
 
@@ -229,6 +225,64 @@ class AuthController extends Controller
         return ApiResponseDTO::success(
             message: __('auth.recovery_codes_generated'),
             data: ['recovery_codes' => $codes],
+        );
+    }
+
+    public function sendOtp(SendOtpRequest $request): JsonResponse
+    {
+        try {
+            $this->otpService->send(
+                email: $request->validated('email'),
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent(),
+            );
+
+            return ApiResponseDTO::success(message: __('auth.otp_sent'));
+        } catch (\Throwable $e) {
+            return ApiResponseDTO::error(
+                message: __('auth.otp_send_failed', ['default' => 'Failed to send OTP.']),
+                code: 500,
+            );
+        }
+    }
+
+    public function verifyOtpLogin(VerifyOtpLoginRequest $request): JsonResponse
+    {
+        $email = $request->validated('email');
+        $code = $request->validated('code');
+
+        $user = $this->otpService->verify($email, $code);
+
+        if (! $user) {
+            return ApiResponseDTO::error(
+                message: __('auth.otp_invalid'),
+                code: 422,
+            );
+        }
+
+        if (! $user->isActive()) {
+            return ApiResponseDTO::error(
+                message: __('auth.inactive'),
+                code: 403,
+            );
+        }
+
+        $user->update([
+            'last_login_ip' => $request->ip(),
+            'last_login_at' => now(),
+        ]);
+
+        $result = $this->apiTokenService->issueTokenResponse($user);
+
+        if ($fingerprint = $request->header('X-Device-Fingerprint')) {
+            $this->deviceFingerprintService->record($user, $fingerprint);
+        }
+
+        Auth::login($user);
+
+        return ApiResponseDTO::success(
+            message: __('auth.login_success'),
+            data: $result,
         );
     }
 }

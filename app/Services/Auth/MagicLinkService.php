@@ -17,6 +17,11 @@ class MagicLinkService
     {
         $token = Str::random(64);
 
+        MagicLinkToken::where('email', $email)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['used_at' => now()]);
+
         MagicLinkToken::create([
             'email' => $email,
             'token' => hash('sha256', $token),

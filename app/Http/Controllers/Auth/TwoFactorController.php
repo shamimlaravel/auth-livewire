@@ -22,6 +22,10 @@ class TwoFactorController extends Controller
     {
         $user = Auth::user();
 
+        if (! $user->two_factor_secret) {
+            return back()->withErrors(['code' => __('auth.two_factor_not_setup')]);
+        }
+
         if (! $this->twoFactorService->verify($user->two_factor_secret, $request->validated('code'))) {
             return back()->withErrors(['code' => __('auth.invalid_two_factor_code')]);
         }
@@ -34,24 +38,9 @@ class TwoFactorController extends Controller
     public function enable(Request $request): mixed
     {
         $user = $request->user();
-        $secret = $this->twoFactorService->generateSecretKey();
+        $setup = $this->twoFactorService->setup($user);
 
-        $user->update(['two_factor_secret' => $secret]);
-
-        $qrCodeUrl = $this->twoFactorService->getQrCodeUrl(
-            config('app.name'),
-            $user->email,
-            $secret,
-        );
-
-        $recoveryCodes = $this->twoFactorService->generateRecoveryCodes();
-        $user->update(['two_factor_recovery_codes' => json_encode($recoveryCodes)]);
-
-        return back()->with([
-            'secret' => $secret,
-            'qr_code_url' => $qrCodeUrl,
-            'recovery_codes' => $recoveryCodes,
-        ]);
+        return back()->with($setup);
     }
 
     public function confirm(TwoFactorRequest $request): RedirectResponse

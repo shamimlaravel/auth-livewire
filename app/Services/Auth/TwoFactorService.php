@@ -62,6 +62,29 @@ class TwoFactorService
         );
     }
 
+    public function setup(User $user): array
+    {
+        $secret = $this->generateSecretKey();
+        $recoveryCodes = $this->generateRecoveryCodes();
+
+        $user->update([
+            'two_factor_secret' => $secret,
+            'two_factor_recovery_codes' => json_encode($recoveryCodes),
+        ]);
+
+        $qrCodeUrl = $this->getQrCodeUrl(
+            config('app.name'),
+            $user->email,
+            $secret,
+        );
+
+        return [
+            'secret' => $secret,
+            'qr_code_url' => $qrCodeUrl,
+            'recovery_codes' => $recoveryCodes,
+        ];
+    }
+
     public function generateRecoveryCodes(): array
     {
         $codes = [];

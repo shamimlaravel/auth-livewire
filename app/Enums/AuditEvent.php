@@ -26,4 +26,7 @@ enum AuditEvent: string
     case RoleRemoved = 'role_removed';
     case AccountDeactivated = 'account_deactivated';
     case AccountReactivated = 'account_reactivated';
+    case OtpLoginRequested = 'otp_login_requested';
+    case OtpLoginVerified = 'otp_login_verified';
+    case OtpLoginFailed = 'otp_login_failed';
 }

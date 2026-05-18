@@ -10,11 +10,13 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
         Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot-password');
         Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('reset-password');
         Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('resend-verification');
+        Route::post('/send-otp', [AuthController::class, 'sendOtp'])->name('send-otp');
+        Route::post('/verify-otp-login', [AuthController::class, 'verifyOtpLogin'])->name('verify-otp-login');
     });
 
     Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        Route::post('/verify-email', [AuthController::class, 'verifyEmail'])->name('verify-email');
+        Route::post('/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verify-email');
         Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('verify-otp');
         Route::post('/two-factor/enable', [AuthController::class, 'enableTwoFactor'])->name('two-factor.enable');
         Route::post('/two-factor/confirm', [AuthController::class, 'confirmTwoFactor'])->name('two-factor.confirm');

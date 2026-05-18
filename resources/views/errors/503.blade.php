@@ -6,11 +6,11 @@
     <title>503 - Maintenance</title>
     @vite(['resources/css/app.css'])
 </head>
-<body class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+<body class="flex min-h-screen items-center justify-center bg-surface-50 px-4">
     <div class="w-full max-w-md text-center">
-        <h1 class="text-7xl font-bold text-indigo-600">503</h1>
-        <h2 class="mt-4 text-2xl font-semibold text-gray-900">{{ __('Under Maintenance') }}</h2>
-        <p class="mt-2 text-gray-600">{{ __('We are currently performing maintenance. Please check back soon.') }}</p>
+        <h1 class="text-7xl font-bold text-brand-500">503</h1>
+        <h2 class="mt-4 text-2xl font-semibold text-surface-900">{{ __('Under Maintenance') }}</h2>
+        <p class="mt-2 text-surface-500">{{ __('We are currently performing maintenance. Please check back soon.') }}</p>
     </div>
 </body>
 </html>

@@ -21,7 +21,7 @@ class DeviceFingerprintService
     public function record(User $user, string $fingerprint, ?string $platform = null, ?string $browser = null): DeviceFingerprint
     {
         return $user->deviceFingerprints()->updateOrCreate(
-            ['fingerprint_hash' => $fingerprint],
+            ['fingerprint_hash' => $fingerprint, 'user_id' => $user->id],
             [
                 'device_name' => $browser,
                 'platform' => $platform,

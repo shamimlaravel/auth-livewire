@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Auth;
 
-use App\Actions\Auth\LoginUserAction;
 use App\Actions\Auth\RedirectAuthenticatedUser;
 use App\DTOs\Auth\LoginDTO;
 use App\Models\User;
+use App\Services\Auth\AuthenticationService;
 use App\Services\Auth\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -32,11 +32,11 @@ class Login extends Component
         ];
     }
 
-    public function submit(LoginUserAction $action): void
+    public function submit(AuthenticationService $authService): void
     {
         $this->validate();
 
-        $user = $action->execute(new LoginDTO(
+        $user = $authService->login(new LoginDTO(
             login: $this->login,
             password: $this->password,
             remember: $this->remember,
@@ -78,7 +78,7 @@ class Login extends Component
             return;
         }
 
-        Auth::login($user);
+        Auth::login($user, $this->remember);
         session()->forget('two_factor_user_id');
         $this->redirectToDashboard();
     }

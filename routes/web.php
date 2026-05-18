@@ -14,7 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::get('/settings', AccountSettings::class)->name('settings');
 
-    Route::middleware(['role:seller,reseller'])->prefix('seller')->name('seller.')->group(function () {
+    Route::middleware(['role:seller|reseller'])->prefix('seller')->name('seller.')->group(function () {
         Route::get('/', SellerDashboard::class)->name('dashboard');
     });
 

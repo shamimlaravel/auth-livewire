@@ -20,7 +20,7 @@ class AddressFactory extends Factory
             'state' => fake()->state(),
             'postal_code' => fake()->postcode(),
             'country' => fake()->country(),
-            'is_primary' => true,
+            'is_primary' => false,
         ];
     }
 

@@ -3,9 +3,9 @@
 namespace App\Livewire\Auth;
 
 use App\Actions\Auth\RedirectAuthenticatedUser;
-use App\Actions\Auth\RegisterUserAction;
 use App\DTOs\Auth\RegisterDTO;
 use App\Models\User;
+use App\Services\Auth\AuthenticationService;
 use App\Services\Auth\PasswordValidationService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -169,11 +169,11 @@ class Register extends Component
         $this->resetValidation();
     }
 
-    public function submit(RegisterUserAction $action): void
+    public function submit(AuthenticationService $authService): void
     {
         $this->validate();
 
-        $user = $action->execute(new RegisterDTO(
+        $user = $authService->register(new RegisterDTO(
             name: $this->name,
             email: $this->email,
             password: $this->password,
