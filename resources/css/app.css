@@ -1,65 +1,163 @@
 @import 'tailwindcss';
 
+/* ── Source resolution ─────────────────────────────────────────────────── */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* ── Design-token theme ─────────────────────────────────────────────────── */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --color-neon-purple: #6C3BFF;
-    --color-deep-blue: #3F5EFB;
-    --color-lavender: #A78BFA;
-    --color-dark-bg: #0F0A1E;
+    /* ── Type scale ── */
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system,
+        BlinkMacSystemFont, 'Segoe UI', sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
 
-    --animate-float-1: float-1 7s ease-in-out infinite;
-    --animate-float-2: float-2 9s ease-in-out infinite;
-    --animate-float-3: float-3 8s ease-in-out infinite;
-    --animate-float-4: float-4 10s ease-in-out infinite;
-    --animate-float-5: float-5 11s ease-in-out infinite;
-    --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
-    --animate-scan-line: scan-line 8s linear infinite;
+    /* ── Neutrals ──  warm off-white to near-black */
+    --color-surface-50:  #F9F8FB;
+    --color-surface-100: #F3F1F7;
+    --color-surface-200: #E6E2EE;
+    --color-surface-300: #C8C3D5;
+    --color-surface-400: #8E889F;
+    --color-surface-500: #64606E;
+    --color-surface-600: #4A4654;
+    --color-surface-700: #36323E;
+    --color-surface-800: #1E1B23;
+    --color-surface-900: #100E14;
+
+    /* ── Brand accent palette ── (kept from existing system — now structured) */
+    --color-brand-50:  #EEE9FF;
+    --color-brand-100: #D4CCFF;
+    --color-brand-200: #B8A5FF;
+    --color-brand-300: #9D7EFF;
+    --color-brand-400: #8468FF;
+    --color-brand-500: #6C3BFF;   /* ← primary brand (neon-purple) */
+    --color-brand-600: #5520CC;
+    --color-brand-700: #31136A;
+
+    --color-brand-b-400: #7799FF;
+    --color-brand-b-500: #3F5EFB;   /* ← secondary brand (deep-blue)   */
+    --color-brand-b-600: #2A3FC8;
+
+    --color-brand-l-50:  #F3EDFF;
+    --color-brand-l-200: #B8A0FF;
+    --color-brand-l-300: #A78BFA;   /* ← tertiary brand (lavender)      */
+    --color-brand-l-400: #7C68E8;
+
+    /* ── Functional colours ── */
+    --color-success-50: #EDFBF3;
+    --color-success-500:#16A34A;
+    --color-success-600:#15802D;
+    --color-error-50:  #FEF2F2;
+    --color-error-500: #DC2626;
+    --color-error-600: #B91C1C;
+    --color-warning-50:#FFFBEB;
+    --color-warning-500:#D97706;
+
+    /* ── Elevation (shadow tokens) ── */
+    --shadow-sm:  0 1px 2px #0F0A1E0A, 0 1px 3px #0F0A1E14;
+    --shadow-md:  0 4px 6px -1px #0F0A1E0A, 0 2px 8px -2px #0F0A1E14;
+    --shadow-lg:  0 8px 16px -4px #0F0A1E14, 0 4px 12px -4px #0F0A1E0A;
+    --shadow-xl:  0 16px 32px -8px #0F0A1E1F, 0 6px 16px -6px #0F0A1E14;
+
+    /* ── Input border / ring ── */
+    --ring-offset-width: 1px;
+    --ring-offset-color: #F9F8FB;
+
+    /* ── Component-specific ── */
+    --radius-auth-card: 30px;
+    --radius-field: 12px;
+    --radius-button: 12px;
+
+    /* ── Animation tokens ── */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in:  cubic-bezier(0.55, 0, 1, 0.45);
+    --duration-sm: 150ms;
+    --duration-md: 250ms;
+    --duration-lg: 400ms;
 }
 
-@keyframes float-1 {
-    0%, 100% { transform: translateY(0px) rotate(6deg); }
-    50% { transform: translateY(-18px) rotate(6deg); }
-}
-@keyframes float-2 {
-    0%, 100% { transform: translateY(0px) rotate(-4deg); }
-    50% { transform: translateY(-14px) rotate(-4deg); }
-}
-@keyframes float-3 {
-    0%, 100% { transform: translateY(0px) rotate(8deg); }
-    50% { transform: translateY(-20px) rotate(8deg); }
-}
-@keyframes float-4 {
-    0%, 100% { transform: translateY(0px) rotate(-6deg); }
-    50% { transform: translateY(-12px) rotate(-6deg); }
-}
-@keyframes float-5 {
-    0%, 100% { transform: translateY(0px) rotate(3deg); }
-    50% { transform: translateY(-16px) rotate(3deg); }
-}
-@keyframes pulse-glow {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.2); }
-}
-@keyframes scan-line {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100vh); }
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+══════════════════════════════════════════════════════════════════════════ */
+@keyframes float-1 { 0%,100%{transform:translateY(0) rotate(6deg)} 50%{transform:translateY(-18px) rotate(6deg)} }
+@keyframes float-2 { 0%,100%{transform:translateY(0) rotate(-4deg)} 50%{transform:translateY(-16px) rotate(-4deg)} }
+@keyframes float-3 { 0%,100%{transform:translateY(0) rotate(8deg)} 50%{transform:translateY(-22px) rotate(8deg)} }
+@keyframes float-4 { 0%,100%{transform:translateY(0) rotate(-6deg)} 50%{transform:translateY(-12px) rotate(-6deg)} }
+@keyframes float-5 { 0%,100%{transform:translateY(0) rotate(3deg)} 50%{transform:translateY(-16px) rotate(3deg)} }
+@keyframes pulse-glow { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.7;transform:scale(1.18)} }
+@keyframes scan-line { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
 
-[x-cloak] { display: none; }
+/* ══════════════════════════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════════════════════════ */
+[x-cloak]                      { display:     none !important; }
+[x-cloak.un-cloak]             { display:     revert !important; }
 
+/* Neon glow — used on primary CTAs */
 .neon-glow {
-    box-shadow: 0 0 30px rgba(108, 59, 255, 0.25);
+    box-shadow:
+        0 0 24px   rgba(108, 59, 255, .35),
+        0 4px 12px rgba(108, 59, 255, .20),
+        inset 0 1px 0 rgba(255,255,255,.12);
 }
 
+/* Cyberpunk background grid */
 .cyberpunk-grid {
     background-image:
-        linear-gradient(rgba(108, 59, 255, 0.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(108, 59, 255, 0.06) 1px, transparent 1px);
+        linear-gradient(rgba(108, 59, 255, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108, 59, 255, .05) 1px, transparent 1px);
     background-size: 32px 32px;
+}
+
+/* Brand gradient short-hand */
+.gradient-brand {
+    background-image: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-b-500));
+}
+
+/* Smooth scroll */
+.html-smooth { scroll-behavior: smooth; }
+
+/* ── Focus-ring helpers ─────────────────────────────────────────────────── */
+.focus-ring {
+    outline: none;
+}
+.focus-ring:focus-visible {
+    outline: 2px solid var(--color-brand-400);
+    outline-offset: 2px;
+}
+
+/* ── Screen-reader only ─────────────────────────────────────────────────── */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ── Responsive container (works standalone without Tailwind CDN) ─── */
+.r-container {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+}
+
+/* ── Improved checkbox ──────────────────────────────────────────────────── */
+input[type="checkbox"]:checked {
+    background-color: var(--color-brand-500);
+    border-color:   var(--color-brand-500);
+}
+
+/* ── Transition utilities ───────────────────────────────────────────────── */
+.transition-subtle {
+    transition: background-color var(--duration-md) var(--ease-out),
+                border-color   var(--duration-md) var(--ease-out),
+                box-shadow     var(--duration-md) var(--ease-out),
+                color          var(--duration-md) var(--ease-out);
 }

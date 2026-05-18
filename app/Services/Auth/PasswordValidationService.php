@@ -57,7 +57,7 @@ class PasswordValidationService
             return 0;
         }
 
-        foreach (explode("\r\n", $response) as $line) {
+        foreach (explode("\n", str_replace("\r\n", "\n", $response)) as $line) {
             $parts = explode(':', $line);
 
             if (strtoupper(trim($parts[0] ?? '')) === $suffix) {

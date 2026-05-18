@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Auth;
 
-use App\Actions\Auth\SendMagicLinkAction;
+use App\Services\Auth\MagicLinkService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -20,14 +20,14 @@ class MagicLinkRequest extends Component
         ];
     }
 
-    public function submit(SendMagicLinkAction $action): void
+    public function submit(MagicLinkService $service): void
     {
         $this->validate();
 
-        $action->execute(
+        $service->send(
             email: $this->email,
-            ip: request()->ip(),
-            ua: request()->userAgent(),
+            ipAddress: request()->ip(),
+            userAgent: request()->userAgent(),
         );
 
         $this->status = __('auth.magic_link_sent');

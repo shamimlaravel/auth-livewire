@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\MagicLinkRequest;
+use App\Livewire\Auth\OtpLogin;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.store');
     Route::get('/login/magic', MagicLinkRequest::class)->name('login.magic');
+    Route::get('/login/otp', OtpLogin::class)->name('login.otp');
     Route::get('/login/magic/{token}', [MagicLinkController::class, 'verify'])->name('login.magic.verify');
 
     Route::prefix('auth')->name('auth.social.')->group(function () {

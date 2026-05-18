@@ -25,3 +25,15 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# AI tool configs
+.ai/
+.gemini/
+.junie/
+
+# Development artifacts
+.kilo/
+/translate.php
+/tools/
+/postman/
+/docs/

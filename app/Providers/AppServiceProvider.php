@@ -26,6 +26,5 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
 
-        RateLimiter::for('magic-link', fn (Request $request) => Limit::perMinute(2)->by($request->ip()));
     }
 }
