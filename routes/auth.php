@@ -10,8 +10,12 @@ use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\MagicLinkRequest;
 use App\Livewire\Auth\OtpLogin;
+use App\Livewire\Auth\PhoneLogin;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\TelegramLogin;
+use App\Livewire\Auth\TwoFactorChallenge;
+use App\Livewire\Auth\WhatsAppLogin;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -23,6 +27,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.store');
     Route::get('/login/magic', MagicLinkRequest::class)->name('login.magic');
     Route::get('/login/otp', OtpLogin::class)->name('login.otp');
+    Route::get('/login/phone', PhoneLogin::class)->name('login.phone');
+    Route::get('/login/whatsapp', WhatsAppLogin::class)->name('login.whatsapp');
+    Route::get('/login/telegram', TelegramLogin::class)->name('login.telegram');
     Route::get('/login/magic/{token}', [MagicLinkController::class, 'verify'])->name('login.magic.verify');
 
     Route::prefix('auth')->name('auth.social.')->group(function () {
@@ -40,7 +47,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
         ->middleware('throttle:6,1')->name('verification.send');
 
-    Route::get('/two-factor-challenge', [TwoFactorController::class, 'create'])->name('two-factor.login');
     Route::post('/two-factor-challenge', [TwoFactorController::class, 'store']);
 
     Route::post('/user/two-factor/enable', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
@@ -48,3 +54,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
     Route::post('/user/two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes'])->name('two-factor.recovery-codes');
 });
+
+// Two-factor challenge page — accessible before the user is fully authenticated
+Route::get('/two-factor/challenge', TwoFactorChallenge::class)->name('two-factor.challenge');

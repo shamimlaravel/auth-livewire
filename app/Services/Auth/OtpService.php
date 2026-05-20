@@ -3,77 +3,43 @@
 namespace App\Services\Auth;
 
 use App\Enums\AuditEvent;
-use App\Models\OtpToken;
+use App\Enums\AuthChannel;
 use App\Models\User;
-use App\Notifications\OtpLoginNotification;
 use App\Services\Security\AuditService;
 
+/**
+ * Backward-compatible wrapper around MultiChannelOtpService.
+ *
+ * Keeps the original email-only API intact so existing controllers,
+ * notifications, and Livewire components keep working without changes.
+ */
 class OtpService
 {
-    public function __construct(private readonly AuditService $auditService) {}
+    public function __construct(
+        private readonly MultiChannelOtpService $multiService,
+        private readonly AuditService $auditService,
+    ) {}
 
+    /**
+     * Send OTP via email — original API preserved.
+     */
     public function send(string $email, ?string $ipAddress = null, ?string $userAgent = null): void
     {
-        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        OtpToken::where('email', $email)
-            ->whereNull('used_at')
-            ->where('expires_at', '>', now())
-            ->update(['used_at' => now()]);
-
-        OtpToken::create([
-            'email' => $email,
-            'token' => hash('sha256', $otp),
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        $user = User::where('email', $email)->first();
-
-        if ($user) {
-            $user->notify(new OtpLoginNotification($otp));
-        }
+        $this->multiService->send($email, AuthChannel::Email);
 
         $this->auditService->log(
             event: AuditEvent::OtpLoginRequested,
             ipAddress: $ipAddress,
             userAgent: $userAgent,
-            payload: ['email' => $email],
+            payload: ['email' => $email, 'channel' => 'email'],
         );
     }
 
+    /**
+     * Verify OTP via email — original API preserved.
+     */
     public function verify(string $email, string $code): ?User
     {
-        $hashed = hash('sha256', $code);
-        $record = OtpToken::where('email', $email)
-            ->where('token', $hashed)
-            ->valid()
-            ->first();
-
-        if (! $record) {
-            $this->auditService->log(
-                event: AuditEvent::OtpLoginFailed,
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-                payload: ['email' => $email, 'reason' => 'Invalid or expired code'],
-            );
-
-            return null;
-        }
-
-        $record->update(['used_at' => now()]);
-
-        $user = User::where('email', $email)->first();
-
-        if ($user) {
-            $this->auditService->log(
-                event: AuditEvent::OtpLoginVerified,
-                user: $user,
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-                payload: ['email' => $email],
-            );
-        }
-
-        return $user;
+        return $this->multiService->verify($email, $code, AuthChannel::Email);
     }
 }

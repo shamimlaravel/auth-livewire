@@ -48,6 +48,8 @@ test('otp service verifies valid code and returns user', function () {
 
     OtpToken::create([
         'email' => 'user@example.com',
+        'identifiable' => 'user@example.com',
+        'channel' => 'email',
         'token' => hash('sha256', $validCode),
         'expires_at' => now()->addMinutes(10),
     ]);

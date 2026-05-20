@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OtpToken extends Model
 {
     protected $fillable = [
-        'email', 'token', 'expires_at', 'used_at',
+        'email', 'token', 'expires_at', 'used_at', 'identifiable', 'channel',
     ];
 
     protected function casts(): array

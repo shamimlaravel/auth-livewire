@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\AdminAuthConfig;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\RoleManager;
 use App\Livewire\Admin\UserManager;
@@ -22,5 +23,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', AdminDashboard::class)->name('dashboard');
         Route::get('/users', UserManager::class)->name('users');
         Route::get('/roles', RoleManager::class)->name('roles');
+        Route::get('/auth-config', AdminAuthConfig::class)->name('auth.config');
     });
 });

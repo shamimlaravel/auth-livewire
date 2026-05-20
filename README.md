@@ -56,6 +56,7 @@ auth/
 │   │
 │   ├── Enums/                    # Enum definitions
 │   │   ├── AuditEvent.php
+│   │   ├── AuthChannel.php        # Auth delivery channels (SMS/WhatsApp/Telegram/Email)
 │   │   ├── AuthProvider.php
 │   │   └── Role.php
 │   │
@@ -74,6 +75,9 @@ auth/
 │   ├── Livewire/               # Livewire components
 │   │   ├── Auth/               # Authentication components
 │   │   │   ├── Login.php
+│   │   │   ├── PhoneLogin.php       # Phone / SMS OTP login
+│   │   │   ├── TelegramLogin.php    # Telegram OTP login
+│   │   │   ├── WhatsAppLogin.php    # WhatsApp OTP login
 │   │   │   ├── Register.php
 │   │   │   ├── TwoFactorChallenge.php
 │   │   │   ├── MagicLinkRequest.php
@@ -85,6 +89,7 @@ auth/
 │   │   │   └── Dashboard.php
 │   │   ├── Admin/              # Admin panel
 │   │   │   ├── Dashboard.php
+│   │   │   ├── AdminAuthConfig.php  # Multi-channel auth & 7-provider OAuth configuration
 │   │   │   ├── UserManager.php
 │   │   │   └── RoleManager.php
 │   │   └── Seller/             # Seller dashboard
@@ -92,6 +97,7 @@ auth/
 │   │
 │   ├── Models/                 # Eloquent models
 │   │   ├── User.php
+│   │   ├── AuthSetting.php        # Database-backed auth configuration key/value store
 │   │   ├── Profile.php
 │   │   ├── Address.php
 │   │   ├── SocialAccount.php
@@ -123,6 +129,8 @@ auth/
 │   │   │   ├── AuthenticationService.php
 │   │   │   ├── MagicLinkService.php
 │   │   │   ├── OtpService.php
+│   │   │   ├── MultiChannelOtpService.php  # Unified OTP delivery (SMS/WhatsApp/Telegram/Email)
+│   │   │   ├── ProviderConfigService.php   # 7-provider OAuth config management
 │   │   │   ├── PasswordResetService.php
 │   │   │   ├── PasswordValidationService.php
 │   │   │   ├── SocialLoginService.php
@@ -138,6 +146,7 @@ auth/
 │           ├── Seller/App.php
 │           ├── User/App.php
 │           └── Ui/
+│               ├── Accordion.php       # Collapsible accordion UI widget
 │               ├── Badge.php
 │               ├── Button.php
 │               ├── Card.php
@@ -145,7 +154,10 @@ auth/
 │               ├── Icon.php
 │               ├── Input.php
 │               ├── Modal.php
-│               └── SidebarLink.php
+│               ├── SettingsRow.php     # Labeled settings row (label + input + description)
+│               ├── SidebarLink.php
+│               ├── Tabs.php            # Tabbed content switcher
+│               └── Toggle.php          # On/off toggle switch
 │
 ├── database/
 │   ├── factories/              # Model factories
@@ -454,6 +466,52 @@ Yes   No
 └──────────────────┘
 ```
 
+### Multi-Channel OTP Authentication Flow
+
+```
+GET  /login/phone         GET  /login/whatsapp        GET  /login/telegram
+   │                         │                           │
+   ▼                         ▼                           ▼
+┌─────────┐              ┌────────┐               ┌──────────┐
+│PhoneLogin│             │WhatsApp│               │Telegram  │
+│Livewire │             │Login   │               │Login     │
+└────┬────┘             └───┬────┘               └─────┬────┘
+     │                     sendOtp()               sendOtp()
+     ▼                         ▼                           ▼
+┌────────────────────────────────────────────────────────────┐
+│              MultiChannelOtpService::send()               │
+│    generates SHA-256 token, invalidates old tokens         │
+│    resolves delivery driver by channel from config         │
+└──────────────┬──────────────────────────┬─────────────────┘
+               │          │                │
+               ▼          ▼                ▼
+        ┌──────────┐  ┌──────────┐   ┌──────────┐
+        │  Barta   │  │Devsfort  │   │Telegraph │
+        │  SMS     │  │WhatsApp  │   │  Telegram│
+        └────┬─────┘  └────┬─────┘   └────┬─────┘
+             │             │               │
+             ▼             ▼               ▼
+        ┌──────────────────────────────────────────────┐
+        │         User reads code on device             │
+        └────────────────────┬─────────────────────────┘
+                             │  enters code → verifyOtp()
+                             ▼
+        ┌──────────────────────────────────────────────┐
+        │   MultiChannelOtpService::verify()            │
+        │   hashes input, finds valid OtpToken record    │
+        └──────────────┬───────────────────────────────┘
+                       │
+              ┌────────┴─────────┐
+              │                  │
+           valid              invalid
+              │                  │
+              ▼                  ▼
+        ┌──────────┐       ┌──────────┐
+        │ Auth::   │       │ Show     │
+        │login()   │       │ error    │
+        └──────────┘       └──────────┘
+```
+
 ## Features
 
 ### Authentication Methods
@@ -461,9 +519,12 @@ Yes   No
 | Method | Status | Description |
 |--------|--------|-------------|
 | Email/Password | ✅ | Traditional authentication with username or email |
-| Social Login | ✅ | OAuth with Google, GitHub, Facebook |
+| Phone / SMS OTP | ✅ | OTP-based login via SMS |
+| WhatsApp OTP | ✅ | OTP-based login via WhatsApp |
+| Telegram OTP | ✅ | OTP-based login via Telegram |
+| Social Login | ✅ | OAuth with 7 providers — Google, GitHub, Facebook, Twitter, LinkedIn, GitLab, Microsoft |
 | Magic Link | ✅ | Passwordless authentication via email |
-| Two-Factor Auth | ✅ | TOTP-based 2FA with recovery codes |
+| Two-Factor Auth | ✅ | TOTP-based 2FA with recovery codes; deliverable via SMS, WhatsApp, Telegram, or Email |
 | API Tokens | ✅ | Sanctum-based token authentication |
 
 ### Password Security
@@ -481,11 +542,23 @@ Yes   No
 - **Rate Limiting**: Configurable throttling per endpoint
 - **Account Status**: Active/inactive user management
 
+### Multi-Channel Authentication
+
+- **AuthChannel Enum** — `App\Enums\AuthChannel` with `SMS`, `WhatsApp`, `Telegram`, and `Email` channels
+- **Phone / SMS OTP** — Login or 2FA verification via one-time phone codes via Barta SMS driver
+- **WhatsApp OTP** — Login or 2FA via WhatsApp messages via Devsfort/Whatsapp driver
+- **Telegram OTP** — Login or 2FA via Telegram Bot via DefStudio/Telegraph driver
+- **Email OTP** — Login or 2FA via Laravel mail notifications
+- **MultiChannelOtpService** — unified `send()` / `verify()` with SHA-256 token hashing, expiration, and auto-invalidation of stale tokens
+- **Flexible 2FA delivery** — Each user can choose their preferred 2FA channel per account
+- **OtpToken model** — tracks `identifiable`, `channel`, `expires_at`, `used_at`, and `email` per token
+
 ### User Management
 
 - **Role-Based Access**: User, Seller, and Admin roles
-- **Profile Management**: Name, email, phone, and address
-- **Social Accounts**: Link multiple OAuth providers
+- **Profile Management**: Name, email, phone, address, and contact channels
+- **Contact Channels**: Per-user phone, WhatsApp, and Telegram identifiers stored on the `users` table
+- **Social Accounts**: Link multiple OAuth providers (7 supported)
 - **Email Verification**: Required verification for new accounts
 
 ## Authentication Process
@@ -499,8 +572,11 @@ The login interface provides a clean, secure entry point for users:
 *Features:*
 - Username or email input
 - Password field with visibility toggle
+- Phone / SMS OTP login button
+- WhatsApp OTP login button
+- Telegram OTP login button
 - "Remember me" option
-- Social login buttons (Google, GitHub, Facebook)
+- Social login buttons (Google, GitHub, Facebook, Twitter, LinkedIn, GitLab, Microsoft)
 - Magic link alternative
 - Forgot password link
 
@@ -647,22 +723,63 @@ DB_DATABASE=auth
 DB_USERNAME=postgres
 DB_PASSWORD=
 
-# OAuth Providers
+# OAuth Providers (7 supported)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 FACEBOOK_CLIENT_ID=
 FACEBOOK_CLIENT_SECRET=
+TWITTER_CLIENT_ID=
+TWITTER_CLIENT_SECRET=
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+GITLAB_CLIENT_ID=
+GITLAB_CLIENT_SECRET=
+MICROSOFT_CLIENT_ID=
+MICROSOFT_CLIENT_SECRET=
 
-# Security
+# SMS / Phone OTP (Barta driver)
+BARTA_SMS_API_KEY=
+BARTA_SMS_SENDER=
+
+# WhatsApp OTP (Devsfort driver)
+DEVSFORT_WHATSAPP_TOKEN=
+
+# Telegram OTP (DefStudio Telegraph driver)
+TELEGRAM_BOT_TOKEN=
+
+# Multi-Channel Auth Settings (overridden via Admin → Auth Config panel, stored in database)
+# AUTH_OTP_EXPIRY=10          # OTP token expiry in minutes
+# AUTH_OTP_CHANNEL=email      # Default OTP channel: sms | whatsapp | telegram | email
+# AUTH_2FA_CHANNEL=email      # Default 2FA delivery channel: sms | whatsapp | telegram | email
+# AUTH_2FA_FORCE_ALL=false    # Force 2FA for all users
+# AUTH_PHONE_ENABLED=true
+# AUTH_WHATSAPP_ENABLED=false
+# AUTH_TELEGRAM_ENABLED=false
+# AUTH_SOCIAL_GOOGLE=true
+# AUTH_SOCIAL_GITHUB=true
+# AUTH_SOCIAL_FACEBOOK=true
+# AUTH_SOCIAL_TWITTER=false
+# AUTH_SOCIAL_LINKEDIN=false
+# AUTH_SOCIAL_GITLAB=false
+# AUTH_SOCIAL_MICROSOFT=false
+
+# Default Security
 IP_WHITELIST_ENABLED=false
 SUSPICIOUS_LOGIN_NOTIFICATION=true
 ```
 
+### Multi-Channel Auth Configuration
+
+Auth channels, OTP expiry, and provider toggles are centrally managed through the Admin panel at **Admin → Auth Config** (`AdminAuthConfig` Livewire component). Values are persisted in the `auth_settings` table via `AuthSetting::set()` and read back through `AuthSetting::get()` / `AuthSetting::isEnabled()`.
+
+The `config/auth_channels.php` config file defines per-channel sub-configuration (SMS gateway, WhatsApp driver, Telegram bot token, etc.). Individual secrets and credentials can also be overridden per-channel in the **Admin → Auth Config** panel.
+
 ### OAuth Configuration
 
-Configure OAuth providers in `config/services.php`:
+Configure OAuth providers in `config/services.php`:  
+Provider callbacks now merge dynamic DB settings (via `ProviderConfigService`) with the static `config/services.php` values, so credentials can be managed from the Admin panel without code changes.
 
 ```php
 'google' => [
@@ -690,10 +807,18 @@ Configure OAuth providers in `config/services.php`:
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| POST | `/api/auth/verify-otp` | Verify OTP for two-factor authentication |
 | POST | `/api/auth/two-factor/enable` | Generate 2FA secret |
 | POST | `/api/auth/two-factor/confirm` | Confirm and enable 2FA |
 | POST | `/api/auth/two-factor/disable` | Disable 2FA |
 | GET | `/api/auth/two-factor/recovery-codes` | Generate recovery codes |
+
+### Multi-Channel Auth Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/send-otp` | Send OTP via SMS, WhatsApp, Telegram, or Email |
+| POST | `/api/auth/verify-otp-login` | Verify OTP and complete passwordless login |
 
 ### Request/Response Examples
 
@@ -719,6 +844,44 @@ POST /api/auth/login
     },
     "token": "sanctum_token_here"
   }
+}
+```
+
+**Send OTP Request (via SMS / WhatsApp / Telegram / Email):**
+```json
+POST /api/auth/send-otp
+{
+  "identifiable": "+1-555-000-0000",
+  "channel": "sms"
+}
+```
+`identifiable` is the phone number, WhatsApp number, Telegram chat ID, or email address depending on the chosen channel.  
+Supported `channel` values: `sms`, `whatsapp`, `telegram`, `email`.
+
+**Send OTP Response:**
+```json
+{
+  "success": true,
+  "message": "OTP sent successfully"
+}
+```
+
+**Verify OTP Login Request:**
+```json
+POST /api/auth/verify-otp-login
+{
+  "identifiable": "+1-555-000-0000",
+  "code": "123456"
+}
+```
+
+**Verify OTP Login Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "sanctum_token_here",
+  "user": { "id": 1, "name": "John Doe" }
 }
 ```
 

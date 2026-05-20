@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Actions\Auth\RedirectAuthenticatedUser;
 use App\DTOs\Auth\LoginDTO;
+use App\Enums\AuthChannel;
 use App\Models\User;
 use App\Services\Auth\AuthenticationService;
 use App\Services\Auth\TwoFactorService;
@@ -23,6 +24,10 @@ class Login extends Component
     public bool $showTwoFactor = false;
 
     public string $twoFactorCode = '';
+
+    public ?string $otpChannel = 'email';
+
+    public bool $showChannelSelector = false;
 
     protected function rules(): array
     {
@@ -83,6 +88,28 @@ class Login extends Component
         $this->redirectToDashboard();
     }
 
+    /**
+     * Trigger multi-channel OTP login from the main login page.
+     * Stores the login credential in the session and redirects to
+     * the appropriate OTP component via the `login.proceed` route.
+     */
+    public function initiateOtpLogin(string $channel): void
+    {
+        $this->startOtpLogin($channel, $this->login);
+    }
+
+    /**
+     * Start OTP login from any Livewire component — store the identifiable
+     * in the temp session key and navigate to the OTP login blade.
+     */
+    protected function startOtpLogin(string $channel, string $target): void
+    {
+        session(['auth.otp.channel' => $channel]);
+        session(['auth.otp.target' => $target]);
+
+        $this->redirect(route('login.otp'));
+    }
+
     private function redirectToDashboard(): void
     {
         $this->redirect(
@@ -92,6 +119,8 @@ class Login extends Component
 
     public function render()
     {
-        return view('livewire.auth.login');
+        return view('livewire.auth.login', [
+            'channels' => AuthChannel::loginChannels(),
+        ]);
     }
 }

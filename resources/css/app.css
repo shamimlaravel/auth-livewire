@@ -161,3 +161,29 @@ input[type="checkbox"]:checked {
                 box-shadow     var(--duration-md) var(--ease-out),
                 color          var(--duration-md) var(--ease-out);
 }
+
+/* ── Dark mode: class-based (`.dark` on <html>) ──────────────────────── */
+@custom-variant dark (&:is(.dark *));
+
+/* ── Dark theme surface overrides (added on top of Tailwind dark: variants) ── */
+.dark {
+    --color-surface-50:  #1a1a24;
+    --color-surface-100: #22222e;
+    --color-surface-200: #2a2a3a;
+    --color-surface-300: #3d3d52;
+    --color-surface-400: #6b6b82;
+    --color-surface-500: #8e8ea3;
+    --color-surface-600: #a8a8bc;
+    --color-surface-700: #c8c8d8;
+    --color-surface-800: #e2e2ec;
+    --color-surface-900: #f5f5fa;
+}
+
+/* ── Scrollbar hiding utility ─────────────────────────────────────────── */
+.scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}

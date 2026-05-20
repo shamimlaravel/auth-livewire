@@ -72,6 +72,6 @@ class RoleManager extends Component
         return view('livewire.admin.role-manager', [
             'roles' => Role::with('permissions')->get(),
             'allPermissions' => Permission::all(),
-        ])->layout('components.admin.app');
+        ])->layout('components.admin.app', ['header' => 'Role Manager']);
     }
 }
